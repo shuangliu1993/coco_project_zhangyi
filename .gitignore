@@ -1,1 +1,4 @@
 .idea
+*.pt
+__pycache__
+*.egg-info

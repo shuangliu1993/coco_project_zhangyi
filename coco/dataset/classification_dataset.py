@@ -41,16 +41,19 @@ class COCOClassificationDataset(Dataset):
 
         # load id to image name mapping
         self.ids_to_names = {e['id']: e['name'] for e in self.annotations["categories"]}
+        self.names_to_ids = {v: i for i, v in enumerate(self.ids_to_names.values())}
         self.ids_to_image_paths = {e['id']: e['file_name'] for e in self.annotations["images"]}
 
     def __len__(self):
-        return len(self.annotations)
+        return len(self.annotations["annotations"])
 
     def __getitem__(self, idx):
-        class_id = self.annotations["annotations"][idx]["category_id"]
+        raw_class_id = self.annotations["annotations"][idx]["category_id"]
+        final_class_id = self.names_to_ids[self.ids_to_names[raw_class_id]]
         image_path = os.path.join(self.image_dir, self.ids_to_image_paths[self.annotations["annotations"][idx]["image_id"]])
         image = Image.open(image_path)
-        return image, class_id
+        image = image.convert("RGB")  # always convert to RGB Image
+        return image, final_class_id
 
 
 def collate_fn(batch):
@@ -72,7 +75,7 @@ if __name__ == "__main__":
     print(f"image: {image}")
     print(f"class_id: {class_id}")
 
-    dataloader = get_dataloader(dataset, batch_size=4, num_workers=0)
+    dataloader = get_dataloader(dataset, batch_size=16, num_workers=0)
     for image_tensor, labels in dataloader:
         print(f"image_tensor shape: {image_tensor.shape}")
         print(f"labels shape: {labels.shape}")
